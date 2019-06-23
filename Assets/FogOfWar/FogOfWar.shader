@@ -43,10 +43,15 @@
 
             fixed4 frag (v2f i) : SV_Target
             {
+				// Find the closest point to the current one.
+
+				// If distance is very small -> return.
 				if (distance(float3(0, 0, 0), i.worldPos) < 1.0) {
 					discard;
 				}
-                return _Color;
+				// If distance is medium lerp the color.
+                
+				return _Color;
             }
 
             ENDCG
