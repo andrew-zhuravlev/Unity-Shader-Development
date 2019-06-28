@@ -48,7 +48,7 @@ public class FOWController : MonoBehaviour
             _fowPoints[_fowPointIndex + 1] = playerZ;
             _fowPointIndex += 2;
 
-            Debug.Log("Adding point");
+            //Debug.Log("Adding point");
             //_fowMaterial.SetFloatArray("_Points", _fowPoints);
 
             _matBlock.SetFloatArray("_Points", _fowPoints);
