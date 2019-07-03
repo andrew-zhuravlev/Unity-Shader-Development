@@ -6,6 +6,8 @@ namespace GOL {
         [SerializeField] int textureSize;
         [SerializeField] ComputeShader golShader;
         [SerializeField] Renderer rend;
+        [SerializeField] Color aliveCellColor;
+        [SerializeField] Color deadCellColor;
 
         // The next state of the game of life, based on the back texture. Will be drawn on screen.
         RenderTexture frontTexture;
@@ -17,6 +19,9 @@ namespace GOL {
         // Create texture from int[].
         int CreateTextureFromCellsKernel;
 
+        int threadGroupsX;
+        int threadGroupsY;
+
         void Start() {
             frontTexture = CreateRandomWriteTexture(textureSize);
             backTexture = CreateRandomWriteTexture(textureSize);
@@ -25,7 +30,7 @@ namespace GOL {
             CopyTextureKernel = golShader.FindKernel("CopyTexture");
             CreateTextureFromCellsKernel = golShader.FindKernel("CreateTextureFromCells");
 
-            int[] createdCells = CreateRandomCells(textureSize, textureSize);
+            int[,] createdCells = CreateRandomCells(textureSize, textureSize);
             var computeBuffer = new ComputeBuffer(createdCells.Length, sizeof(int));
             computeBuffer.SetData(createdCells);
             golShader.SetBuffer(CreateTextureFromCellsKernel, "CellsBuffer", computeBuffer);
@@ -38,8 +43,11 @@ namespace GOL {
             golShader.SetTexture(CopyTextureKernel, "BackBuffer", backTexture);
             golShader.SetTexture(CreateTextureFromCellsKernel, "BackBuffer", backTexture);
 
-            int threadGroupsX = Mathf.CeilToInt(textureSize / 8.0f);
-            int threadGroupsY = Mathf.CeilToInt(textureSize / 8.0f);
+            golShader.SetVector("Alive", aliveCellColor);
+            golShader.SetVector("Dead", deadCellColor);
+
+            threadGroupsX = Mathf.CeilToInt(textureSize / 8.0f);
+            threadGroupsY = Mathf.CeilToInt(textureSize / 8.0f);
             golShader.Dispatch(CreateTextureFromCellsKernel, threadGroupsX, threadGroupsY, 1);
 
             rend.material.mainTexture = backTexture;
@@ -52,16 +60,15 @@ namespace GOL {
         }
 
         void NextGeneration() {
-            int threadGroupsX = Mathf.CeilToInt(textureSize / 8.0f);
-            int threadGroupsY = Mathf.CeilToInt(textureSize / 8.0f);
             golShader.Dispatch(NextGenerationKernel, threadGroupsX, threadGroupsY, 1);
             golShader.Dispatch(CopyTextureKernel, threadGroupsX, threadGroupsY, 1);
         }
 
-        static int[] CreateRandomCells(int rows, int columns) {
-            int[] result = new int[rows * columns];
-            for(int i = 0; i < result.Length; ++i) {
-                result[i] = Random.Range((int)0, 2);
+        static int[,] CreateRandomCells(int rows, int columns) {
+            int[,] result = new int[rows, columns];
+            for(int r = 0; r < rows; ++r) {
+                for(int c = 0; c < columns; ++c)
+                    result[r, c] = Random.Range((int)0, 2);
             }
             return result;
         }

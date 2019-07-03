@@ -151,9 +151,11 @@ MonoBehaviour:
   m_Script: {fileID: 11500000, guid: 5552c7e2fff67dd48ae5e30c6a081d01, type: 3}
   m_Name: 
   m_EditorClassIdentifier: 
-  textureSize: 16
+  textureSize: 100
   golShader: {fileID: 7200000, guid: 3f1a56e37cb0ec64295f581328f45caf, type: 3}
   rend: {fileID: 127013280}
+  aliveCellColor: {r: 0.120120525, g: 1, b: 0, a: 1}
+  deadCellColor: {r: 0, g: 0, b: 0, a: 1}
 --- !u!23 &127013280
 MeshRenderer:
   m_ObjectHideFlags: 0

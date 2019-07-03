@@ -8,27 +8,29 @@ RWTexture2D<float4> FrontBuffer;
 RWTexture2D<float4> BackBuffer;
 
 // 0 = unpopulated cell, 1 - populated cell.
-RWStructuredBuffer<int> CellsBuffer;
+StructuredBuffer<int> CellsBuffer;
 uint CellsBufferWidth;
 
-bool IsInsideBounds(uint r, uint c) {
-	return r >= 0 && r < CellsBufferWidth && c >= 0 && c < CellsBufferWidth;
+float4 Alive;
+float4 Dead;
+
+bool IsInsideBounds(int2 id) {
+	return id.x >= 0 && (uint)id.x < CellsBufferWidth && id.y >= 0 && (uint)id.y < CellsBufferWidth;
 }
 
 bool IsAlive(uint2 id) {
-	return all(BackBuffer[id] == float4(1.0f, 1.0f, 1.0f, 1.0f));
+	return all(BackBuffer[id] == Alive);
 }
 
 uint GetAliveNeighbours(uint2 id) {
 	uint result = 0;
+	int2 checkid = int2(0,0);
 	for (int row = -1; row <= 1; ++row) {
+		checkid.x = id.x + row;
 		for (int col = -1; col <= 1; ++col) {
-			// REFACTOR.
-			int2 checkid;
-			checkid.x = id.x + row;
 			checkid.y = id.y + col;
-			if (!(row == 0 && col == 0) && IsInsideBounds(id.x + row, id.y + col) && IsAlive(checkid))
-				++result; 
+			if (!(row == 0 && col == 0) && IsInsideBounds(checkid) && IsAlive(checkid))
+				++result;
 		}
 	}
 	return result;
@@ -37,21 +39,24 @@ uint GetAliveNeighbours(uint2 id) {
 // Each group have 64 threads, which can be accessed as a 2d array.
 [numthreads(8,8,1)]
 void NextGeneration (uint3 id : SV_DispatchThreadID) {
-    //FrontBuffer[id.xy] = float4(id.x & id.y, (id.x & 15)/15.0, (id.y & 15)/15.0, 0.0);
-	uint aliveNeighbours = GetAliveNeighbours(id.xy);
-	bool isalive = IsAlive(id.xy);
 	
-	if (isalive) {
-		// Die
-		if (aliveNeighbours < 2 || aliveNeighbours >= 4)
-			FrontBuffer[id.xy] = float4(0.0f, 0.0f, 0.0f, 1.0f);
-		else
-			FrontBuffer[id.xy] = float4(1.0f, 1.0f, 1.0f, 1.0f);
+	uint aliveNeighbours = GetAliveNeighbours(id.xy);
+
+	switch (aliveNeighbours) {
+	case 0:
+	case 1:
+		FrontBuffer[id.xy] = Dead;
+		break;
+	case 2:
+		FrontBuffer[id.xy] = IsAlive(id.xy) ? Alive : Dead;
+		break;
+	case 3:
+		FrontBuffer[id.xy] = Alive;
+		break;
+	default:
+		FrontBuffer[id.xy] = Dead;
+		break;
 	}
-	else if (aliveNeighbours == 3)
-		FrontBuffer[id.xy] = float4(1.0f, 1.0f, 1.0f, 1.0f);
-	else
-		FrontBuffer[id.xy] = float4(0.0f, 0.0f, 0.0f, 1.0f);
 }
 
 [numthreads(8,8,1)]
@@ -61,5 +66,5 @@ void CopyTexture (uint3 id : SV_DispatchThreadID) {
 
 [numthreads(8,8,1)]
 void CreateTextureFromCells (uint3 id : SV_DispatchThreadID) {
-	BackBuffer[id.xy] = CellsBuffer[CellsBufferWidth * id.x + id.y] == 0 ? float4(0.0f,0.0f,0.0f,1.0f) : float4(1.0f,1.0f,1.0f,1.0f);
+	BackBuffer[id.xy] = CellsBuffer[CellsBufferWidth * id.x + id.y] == 0 ? Dead : Alive;
 }

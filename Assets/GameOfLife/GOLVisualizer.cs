@@ -28,13 +28,13 @@ namespace GOL {
         }
 
         void Update() {
-            curTime += Time.deltaTime;
-            if(curTime >= updateTime) {
-                curTime -= updateTime;
+            //curTime += Time.deltaTime;
+            //if(curTime >= updateTime) {
+                //curTime -= updateTime;
 
                 logic.NextGeneration();
                 UpdateTexture();
-            }
+            //}
         }
 
         
