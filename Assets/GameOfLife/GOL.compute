@@ -14,11 +14,12 @@ uint CellsBufferWidth;
 float4 Alive;
 float4 Dead;
 
-bool IsInsideBounds(int2 id) {
-	return id.x >= 0 && (uint)id.x < CellsBufferWidth && id.y >= 0 && (uint)id.y < CellsBufferWidth;
+float IsInsideBounds(int2 id) {
+	//return id.x >= 0 && (uint)id.x < CellsBufferWidth && id.y >= 0 && (uint)id.y < CellsBufferWidth;
+	return step(0, id.x) * step(0, id.y) * (1.0 - step(CellsBufferWidth, id.x)) * (1.0 - step(CellsBufferWidth, id.y));
 }
 
-bool IsAlive(uint2 id) {
+float IsAlive(uint2 id) {
 	return all(BackBuffer[id] == Alive);
 }
 
@@ -28,9 +29,12 @@ uint GetAliveNeighbours(uint2 id) {
 	for (int row = -1; row <= 1; ++row) {
 		checkid.x = id.x + row;
 		for (int col = -1; col <= 1; ++col) {
+			if (row == 0 && col == 0)
+				continue;
 			checkid.y = id.y + col;
-			if (!(row == 0 && col == 0) && IsInsideBounds(checkid) && IsAlive(checkid))
-				++result;
+			//if (!(row == 0 && col == 0) && IsInsideBounds(checkid) && IsAlive(checkid))
+			//	++result;
+			result += IsInsideBounds(checkid) * IsAlive(checkid);
 		}
 	}
 	return result;
