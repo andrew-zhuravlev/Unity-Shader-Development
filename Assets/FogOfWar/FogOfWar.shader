@@ -52,8 +52,6 @@
 				// Find the closest point to the current one.
 				float min_distance = 1.#INF;
 				for (uint i = 0; i < _Index; i += 2) {
-					//refactor
-
 					float cur_distance = distance(float3(_Points[i], 0.0, _Points[i + 1]), input.worldPos);
 					if (cur_distance < min_distance)
 						min_distance = cur_distance;
